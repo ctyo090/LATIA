@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Best Months to Visit</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/typed.js@2.0.12"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f9f9f9;
+      text-align: center;
+    }
+
+    #typed {
+      font-size: 1.4em;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    canvas {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="typed"></div>
+
+  <input type="file" id="csvFiles" multiple accept=".csv" />
+  <canvas id="visitChart" width="900" height="400"></canvas>
+
+  <script>
+    // Initialize Typed.js
+    new Typed("#typed", {
+      strings: [
+        "Welcome!",
+        "Upload your CSV files to discover the best months to visit."
+      ],
+      typeSpeed: 40,
+      backSpeed: 25,
+      backDelay: 2000,
+      loop: true
+    });
+
+    const fileInput = document.getElementById('csvFiles');
+    const ctx = document.getElementById('visitChart').getContext('2d');
+    let chart;
+
+    fileInput.addEventListener('change', function (event) {
+      const files = event.target.files;
+      let datasets = [];
+      let filesProcessed = 0;
+
+      for (let file of files) {
+        Papa.parse(file, {
+          header: true,
+          skipEmptyLines: true,
+          complete: function (results) {
+            const data = results.data;
+            const monthlyTourists = Array(12).fill(0);
+            const monthlyRain = Array(12).fill(0);
+            const counts = Array(12).fill(0);
+
+            for (let row of data) {
+              const month = parseInt(row['月份']) - 1;
+              const tourists = parseFloat(row['景點人數']);
+              const rain = parseFloat(row['月總雨量']);
+
+              if (!isNaN(month) && !isNaN(tourists) && !isNaN(rain)) {
+                monthlyTourists[month] += tourists;
+                monthlyRain[month] += rain;
+                counts[month]++;
+              }
+            }
+
+            for (let i = 0; i < 12; i++) {
+              if (counts[i] > 0) {
+                monthlyTourists[i] /= counts[i];
+                monthlyRain[i] /= counts[i];
+              }
+            }
+
+            const label = file.name.replace('.csv', '');
+
+            datasets.push({
+              label: `${label} - 景點人數`,
+              data: monthlyTourists,
+              type: 'line',
+              yAxisID: 'y',
+              borderColor: getRandomColor(0.5),
+              tension: 0.3
+            });
+
+            datasets.push({
+              label: `${label} - 雨量`,
+              data: monthlyRain,
+              type: 'bar',
+              yAxisID: 'y1',
+              backgroundColor: getRandomColor(0.5)
+            });
+
+            filesProcessed++;
+            if (filesProcessed === files.length) {
+              drawChart(datasets);
+            }
+          }
+        });
+      }
+    });
+
+    function drawChart(datasets) {
+      if (chart) chart.destroy();
+      chart = new Chart(ctx, {
+        data: {
+          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+          datasets: datasets
+        },
+        options: {
+          responsive: true,
+          interaction: {
+            mode: 'index',
+            intersect: false
+          },
+          stacked: false,
+          plugins: {
+            title: {
+              display: true,
+              text: '每月平均觀光景點人數與雨量'
+            }
+          },
+          scales: {
+            y: {
+              type: 'linear',
+              position: 'left',
+              title: {
+                display: true,
+                text: '景點人數'
+              }
+            },
+            y1: {
+              type: 'linear',
+              position: 'right',
+              title: {
+                display: true,
+                text: '雨量 (毫米mm)'
+              },
+              grid: {
+                drawOnChartArea: false
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function getRandomColor(alpha = 0.85) {
+      const r = Math.floor(Math.random() * 255);
+      const g = Math.floor(Math.random() * 255);
+      const b = Math.floor(Math.random() * 255);
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+  </script>
+
+</body>
+</html>
