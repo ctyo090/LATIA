@@ -1,62 +1,137 @@
 <!DOCTYPE html>
-<html lang="zh-Hant-TW">
+<html lang="zh">
 <head>
   <meta charset="UTF-8">
-  <title>最棒去觀光的月份調查</title>
+  <title>景點選擇與圖表顯示</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/typed.js@2.0.12"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
-      padding: 20px;
-      background: #f9f9f9;
+      background-color: #f7f7f7;
+    }
+    h1 {
+      background-color: #e65c1c;
+      color: white;
+      padding: 15px;
       text-align: center;
     }
-
-    #typed {
-      font-size: 1.4em;
-      font-weight: bold;
+    .collapsible {
+      cursor: pointer;
+      background-color: #ddd;
       color: #333;
-      margin-bottom: 20px;
+      padding: 10px;
+      font-size: 16px;
+      border: none;
+      width: 100%;
+      text-align: center;
+      margin: 10px auto;
     }
-
+    .checklist {
+      display: none;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px 20px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .checklist label {
+      display: flex;
+      align-items: center;
+      font-size: 14px;
+    }
+    .checklist input[type="checkbox"] {
+      margin-right: 8px;
+    }
+    #submitBtn {
+      display: block;
+      margin: 20px auto;
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+    }
     canvas {
-      margin-top: 20px;
+      margin-top: 30px;
     }
   </style>
 </head>
 <body>
-
-  <div id="typed"></div>
-
-  <input type="file" id="csvFiles" multiple accept=".csv" />
+  <h1>遊憩據點歷史資料統計圖表</h1>
+  <button class="collapsible" onclick="toggleChecklist()">選擇景點 (Toggle List)</button>
+  <form onsubmit="handleSubmit(event)">
+    <div class="checklist" id="checklist">
+      <label><input type="checkbox" onclick="toggleAll(this)"> 全部 (All)</label>
+      <label><input type="checkbox" class="spot" value="data/士林官邸公園.csv"> 士林官邸公園 (Chiang Kai-shek Shilin Residence Park)</label>
+      <label><input type="checkbox" class="spot" value="data/小油坑遊憩區.csv"> 小油坑遊憩區 (Xiaoyoukeng Recreation Area)</label>
+      <label><input type="checkbox" class="spot" value="data/台北101.csv"> 台北101 (Taipei 101)</label>
+      <label><input type="checkbox" class="spot" value="data/台北當代藝術館.csv"> 台北當代藝術館 (Museum of Contemporary Art ,Taipei)</label>
+      <label><input type="checkbox" class="spot" value="data/松山文創園區.csv"> 松山文創園區 (Songshan Cultural and Creative Park)</label>
+      <label><input type="checkbox" class="spot" value="data/國民革命忠烈祠.csv"> 國民革命忠烈祠 (National Revolutionary Martyrs’ Shrine)</label>
+      <label><input type="checkbox" class="spot" value="data/國立故宮博物院.csv"> 國立故宮博物院 (National Palace Museum)</label>
+      <label><input type="checkbox" class="spot" value="data/國立臺灣科學教育館.csv"> 國立臺灣科學教育館 (National Taiwan Science Education Center)</label>
+      <label><input type="checkbox" class="spot" value="data/國立臺灣藝術教育館.csv"> 國立臺灣藝術教育館 (National Taiwan Arts Education Center)</label>
+      <label><input type="checkbox" class="spot" value="data/凱達格蘭文化館.csv"> 凱達格蘭文化館 (Ketagalan Culture Center)</label>
+      <label><input type="checkbox" class="spot" value="data/陽明山遊客中心.csv"> 陽明山遊客中心 (Yangmingshan Visitor Center)</label>
+      <label><input type="checkbox" class="spot" value="data/陽明書屋.csv"> 陽明書屋 (Yangmingshuwu)</label>
+      <label><input type="checkbox" class="spot" value="data/臺北市立天文科學教育館.csv"> 臺北市立天文科學教育館 (Taipei Astronomical Museum)</label>
+      <label><input type="checkbox" class="spot" value="data/臺北市立美術館.csv"> 臺北市立美術館 (Taipei Fine Arts Museum)</label>
+      <label><input type="checkbox" class="spot" value="data/臺北自來水園區.csv"> 臺北自來水園區 (Taipei Water Park)</label>
+      <label><input type="checkbox" class="spot" value="data/擎天崗.csv"> 擎天崗 (Qingtiangang)</label>
+      <label><input type="checkbox" class="spot" value="data/大屯遊憩區.csv"> 大屯遊憩區 (Datun Recreation Area)</label>
+      <label><input type="checkbox" class="spot" value="data/北投溫泉博物館.csv"> 北投溫泉博物館 (Beitou Hot Spring Museum)</label>
+      <label><input type="checkbox" class="spot" value="data/台北植物園.csv"> 台北植物園 (Taipei Botanical Garden)</label>
+      <label><input type="checkbox" class="spot" value="data/白石湖吊橋.csv"> 白石湖吊橋 (Baishihu Suspension Bridge)</label>
+      <label><input type="checkbox" class="spot" value="data/冷水坑.csv"> 冷水坑 (Lengshuikeng)</label>
+      <label><input type="checkbox" class="spot" value="data/美麗華摩天輪.csv"> 美麗華摩天輪 (Miramar Ferris Wheel)</label>
+      <label><input type="checkbox" class="spot" value="data/國立中正紀念堂.csv"> 國立中正紀念堂 (National Chiang Kai-shek Memorial Hall)</label>
+      <label><input type="checkbox" class="spot" value="data/國立國父紀念館.csv"> 國立國父紀念館 (National Dr. Sun Yat-sen Memorial Hall)</label>
+      <label><input type="checkbox" class="spot" value="data/國立臺灣博物館.csv"> 國立臺灣博物館 (National Taiwan Museum)</label>
+      <label><input type="checkbox" class="spot" value="data/國立歷史博物館.csv"> 國立歷史博物館 (National Museum of History)</label>
+      <label><input type="checkbox" class="spot" value="data/華山1914文化創意產業園區.csv"> 華山1914文化創意產業園區 (Huashan 1914 Creative Park)</label>
+      <label><input type="checkbox" class="spot" value="data/陽明公園.csv"> 陽明公園 (Yangming Park)</label>
+      <label><input type="checkbox" class="spot" value="data/臺北孔廟.csv"> 臺北孔廟 (Taipei Confucius Temple)</label>
+      <label><input type="checkbox" class="spot" value="data/臺北市立兒童新樂園.csv"> 臺北市立兒童新樂園 (Taipei Children’s Amusement Park)</label>
+      <label><input type="checkbox" class="spot" value="data/臺北市立動物園.csv"> 臺北市立動物園 (Taipei Zoo)</label>
+      <label><input type="checkbox" class="spot" value="data/龍鳳谷遊憩區.csv"> 龍鳳谷遊憩區 (Longfonggu Recreation Area)</label>
+      <label><input type="checkbox" class="spot" value="data/關渡自然公園.csv"> 關渡自然公園 (Guandu Nature Park)</label>
+    </div>
+    <button id="submitBtn" type="submit">下一步</button>
+  </form>
   <canvas id="visitChart" width="900" height="400"></canvas>
-
   <script>
-    // Initialize Typed.js
-    new Typed("#typed", {
-      strings: [
-        "Welcome!",
-        "Upload your CSV files to discover the best months to visit."
-      ],
-      typeSpeed: 40,
-      backSpeed: 25,
-      backDelay: 2000,
-      loop: true
-    });
+    function toggleChecklist() {
+      const checklist = document.getElementById("checklist");
+      checklist.style.display = checklist.style.display === "grid" ? "none" : "grid";
+    }
 
-    const fileInput = document.getElementById('csvFiles');
-    const ctx = document.getElementById('visitChart').getContext('2d');
+    function toggleAll(master) {
+      const boxes = document.querySelectorAll(".checklist .spot");
+      boxes.forEach(cb => cb.checked = master.checked);
+    }
+
     let chart;
 
-    fileInput.addEventListener('change', function (event) {
-      const files = event.target.files;
-      let datasets = [];
+    function handleSubmit(event) {
+      event.preventDefault();
+      const selected = document.querySelectorAll(".spot:checked");
+      if (selected.length > 40) {
+        alert("最多只能選擇 40 個景點！");
+        return;
+      }
+
+      const files = Array.from(selected).map(cb => cb.value);
+      const datasets = [];
       let filesProcessed = 0;
 
-      for (let file of files) {
+      files.forEach(file => {
         Papa.parse(file, {
+          download: true,
           header: true,
           skipEmptyLines: true,
           complete: function (results) {
@@ -65,7 +140,7 @@
             const monthlyRain = Array(12).fill(0);
             const counts = Array(12).fill(0);
 
-            for (let row of data) {
+            data.forEach(row => {
               const month = parseInt(row['月份']) - 1;
               const tourists = parseFloat(row['景點人數']);
               const rain = parseFloat(row['月總雨量']);
@@ -75,7 +150,7 @@
                 monthlyRain[month] += rain;
                 counts[month]++;
               }
-            }
+            });
 
             for (let i = 0; i < 12; i++) {
               if (counts[i] > 0) {
@@ -84,7 +159,7 @@
               }
             }
 
-            const label = file.name.replace('.csv', '');
+            const label = file.split('/').pop().replace('.csv', '');
 
             datasets.push({
               label: `${label} - 景點人數`,
@@ -109,10 +184,11 @@
             }
           }
         });
-      }
-    });
+      });
+    }
 
     function drawChart(datasets) {
+      const ctx = document.getElementById('visitChart').getContext('2d');
       if (chart) chart.destroy();
       chart = new Chart(ctx, {
         data: {
@@ -165,6 +241,5 @@
       return `rgba(${r}, ${g}, ${b}, ${alpha})`;
     }
   </script>
-
 </body>
 </html>
